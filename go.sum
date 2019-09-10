@@ -1,0 +1,4 @@
+bitbucket.org/iharsuvorau/mediawiki v0.0.0-20190910124113-5fdbbfbdae8a h1:BgeuRcHZYtwcUhRobuXLQxCo13caGTitKHe2/+JdTzk=
+bitbucket.org/iharsuvorau/mediawiki v0.0.0-20190910124113-5fdbbfbdae8a/go.mod h1:xxH38AOiz8Qh62D2s+zN6KlH3/02h7k6aQXNbwiHzOQ=
+github.com/pkg/errors v0.8.1 h1:iURUrRGxPUNPdy5/HRSm+Yj6okJ6UtLINN0Q9M4+h3I=
+github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=

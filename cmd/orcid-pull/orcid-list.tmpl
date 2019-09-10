@@ -1,0 +1,47 @@
+{{- $works := (index . "Journal Articles") -}}
+{{if gt (len $works) 0 }}
+=== Journal Articles ===
+{{range $works}}
+{{- range .}}
+{{- if .DoiURI }}
+* {{if .ContributorsLine}}{{.ContributorsLine}} {{end}}[{{.DoiURI}} <nowiki>{{.Title}}</nowiki>], {{if .JournalTitle}}{{.JournalTitle}}, {{end}}{{.Year}}.
+{{- else if .URI }}
+* {{if .ContributorsLine}}{{.ContributorsLine}} {{end}}[{{.URI}} <nowiki>{{.Title}}</nowiki>], {{if .JournalTitle}}{{.JournalTitle}}, {{end}}{{.Year}}.
+{{- else }}
+* {{if .ContributorsLine}}{{.ContributorsLine}} {{end}}''{{.Title}}'', {{if .JournalTitle}}{{.JournalTitle}}, {{end}}{{.Year}}.
+{{- end -}}
+{{end -}}
+{{end -}}
+{{end}}
+
+{{- $works = (index . "Conference Papers") -}}
+{{if gt (len $works) 0 }}
+=== Conference Papers ===
+{{range $works}}
+{{- range .}}
+{{- if .DoiURI }}
+* {{if .ContributorsLine}}{{.ContributorsLine}} {{end}}[{{.DoiURI}} <nowiki>{{.Title}}</nowiki>], {{if .JournalTitle}}{{.JournalTitle}}, {{end}}{{.Year}}.
+{{- else if .URI }}
+* {{if .ContributorsLine}}{{.ContributorsLine}} {{end}}[{{.URI}} <nowiki>{{.Title}}</nowiki>], {{if .JournalTitle}}{{.JournalTitle}}, {{end}}{{.Year}}.
+{{- else }}
+* {{if .ContributorsLine}}{{.ContributorsLine}} {{end}}''{{.Title}}'', {{if .JournalTitle}}{{.JournalTitle}}, {{end}}{{.Year}}.
+{{- end -}}
+{{end -}}
+{{end -}}
+{{end}}
+
+{{- $works = (index . "Other") -}}
+{{if gt (len $works) 0 }}
+=== Other ===
+{{range $works}}
+{{- range .}}
+{{- if .DoiURI }}
+* {{if .ContributorsLine}}{{.ContributorsLine}} {{end}}[{{.DoiURI}} <nowiki>{{.Title}}</nowiki>], {{if .JournalTitle}}{{.JournalTitle}}, {{end}}{{.Year}}.
+{{- else if .URI }}
+* {{if .ContributorsLine}}{{.ContributorsLine}} {{end}}[{{.URI}} <nowiki>{{.Title}}</nowiki>], {{if .JournalTitle}}{{.JournalTitle}}, {{end}}{{.Year}}.
+{{- else }}
+* {{if .ContributorsLine}}{{.ContributorsLine}} {{end}}''{{.Title}}'', {{if .JournalTitle}}{{.JournalTitle}}, {{end}}{{.Year}}.
+{{- end -}}
+{{end -}}
+{{end -}}
+{{end}}

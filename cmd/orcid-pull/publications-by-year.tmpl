@@ -1,0 +1,41 @@
+=== Journal Articles ===
+{{range (index . "Journal Articles")}}{{/* work years range */}}
+==== {{(index . 0).Year}} ====
+{{range .}}{{/* works range */}}
+{{- if .DoiURI }}
+* {{if .ContributorsLine}}{{.ContributorsLine}} {{end}}[{{.DoiURI}} <nowiki>{{.Title}}</nowiki>], {{.JournalTitle}}, {{.Year}}.
+{{- else if .URI }}
+* {{if .ContributorsLine}}{{.ContributorsLine}} {{end}}[{{.URI}} <nowiki>{{.Title}}</nowiki>], {{.JournalTitle}}, {{.Year}}.
+{{- else }}
+* {{if .ContributorsLine}}{{.ContributorsLine}} {{end}}''{{.Title}}'', {{.JournalTitle}}, {{.Year}}.
+{{- end -}}
+{{end}}{{/* works range */}}
+{{end}}{{/* work year range */}}
+
+=== Conference Papers ===
+{{range (index . "Conference Papers")}}{{/* work years range */}}
+==== {{(index . 0).Year}} ====
+{{range .}}{{/* works range */}}
+{{- if .DoiURI }}
+* {{if .ContributorsLine}}{{.ContributorsLine}} {{end}}[{{.DoiURI}} <nowiki>{{.Title}}</nowiki>], {{.JournalTitle}}, {{.Year}}.
+{{- else if .URI }}
+* {{if .ContributorsLine}}{{.ContributorsLine}} {{end}}[{{.URI}} <nowiki>{{.Title}}</nowiki>], {{.JournalTitle}}, {{.Year}}.
+{{- else }}
+* {{if .ContributorsLine}}{{.ContributorsLine}} {{end}}''{{.Title}}'', {{.JournalTitle}}, {{.Year}}.
+{{- end -}}
+{{end}}{{/* works range */}}
+{{end}}{{/* work year range */}}
+
+=== Other ===
+{{range (index . "Other")}}{{/* work years range */}}
+==== {{(index . 0).Year}} ====
+{{range .}}{{/* works range */}}
+{{- if .DoiURI }}
+* {{if .ContributorsLine}}{{.ContributorsLine}} {{end}}[{{.DoiURI}} <nowiki>{{.Title}}</nowiki>], {{.JournalTitle}}, {{.Year}}.
+{{- else if .URI }}
+* {{if .ContributorsLine}}{{.ContributorsLine}} {{end}}[{{.URI}} <nowiki>{{.Title}}</nowiki>], {{.JournalTitle}}, {{.Year}}.
+{{- else }}
+* {{if .ContributorsLine}}{{.ContributorsLine}} {{end}}''{{.Title}}'', {{.JournalTitle}}, {{.Year}}.
+{{- end -}}
+{{end}}{{/* works range */}}
+{{end}}{{/* work year range */}}
