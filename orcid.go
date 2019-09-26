@@ -1,6 +1,8 @@
-// Package orcid provides an API for research works fetching using the ORCID Public HTTP API.
+// Package orcid provides an API for research works fetching using the
+// ORCID Public HTTP API.
 //
-// Check the ORCID docs: https://members.orcid.org/api/about-public-api.
+// Check the ORCID docs:
+// https://members.orcid.org/api/about-public-api.
 package orcid
 
 import (
@@ -42,7 +44,8 @@ func (r *Registry) UserID() string {
 	return r.userID
 }
 
-// FetchWorks downloads publications from a file, if it's fresh enough, or via HTTP.
+// FetchWorks downloads publications from a file, if it's fresh
+// enough, or via HTTP.
 func (r *Registry) FetchWorks(logger *log.Logger) ([]*Work, error) {
 	var works []*Work
 	var err error
@@ -130,8 +133,9 @@ type Work struct {
 	ContributorsLine string
 }
 
-// IsFileNew checks the existence of a file and its modification time and returns true if it was
-// modified during the previous maxDuration hours.
+// IsFileNew checks the existence of a file and its modification time
+// and returns true if it was modified during the previous maxDuration
+// hours.
 func IsFileNew(fpath string, maxDuration time.Duration) bool {
 	f, err := os.Open(fpath)
 	defer f.Close()
@@ -153,7 +157,8 @@ func IsFileNew(fpath string, maxDuration time.Duration) bool {
 	return true
 }
 
-// ReadWorks decodes works from an XML-file with works saved as top-level elements.
+// ReadWorks decodes works from an XML-file with works saved as
+// top-level elements.
 func ReadWorks(path string) ([]*Work, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -277,17 +282,18 @@ func decodeWorks(src io.Reader) (*[]Work, error) {
 	return uniqueWorks, nil
 }
 
-// filterUniqueTitles filters works by a unique title and adds to the returned slice only the first
-// item met. Checking by title, because publications with the same titles can have different type of
-// IDs.
+// filterUniqueTitles filters works by a unique title and adds to the
+// returned slice only the first item met. Checking by title, because
+// publications with the same titles can have different type of IDs.
 func filterUniqueTitles(works *[]Work) *[]Work {
 	uniqueWorks := []Work{}
 	var unique bool
 	for _, w := range *works {
 		unique = true
 		for _, uw := range uniqueWorks {
-			// lowering strings and removing all spaces, because people sometimes mess
-			// with spaces and capitalization while naming their works
+			// lowering strings and removing all spaces,
+			// because people sometimes mess with spaces
+			// and capitalization while naming their works
 			if simplifyString(string(w.Title)) == simplifyString(string(uw.Title)) {
 				unique = false
 				break
@@ -313,8 +319,8 @@ func simplifyString(s string) string {
 		"-", "")
 }
 
-// updateExternalIDsURL populates a slice of works with an URI for external ids if its value is
-// missing.
+// updateExternalIDsURL populates a slice of works with an URI for
+// external ids if its value is missing.
 func updateExternalIDsURL(works []*Work) {
 	var uri string
 	for i, w := range works {
@@ -331,7 +337,9 @@ func updateExternalIDsURL(works []*Work) {
 				}
 				works[i].DoiURI = template.URL(uri)
 			case "eid":
-				// TODO: is there a way to generate freely fetchable record from scopus?
+				// TODO: is there a way to generate
+				// freely fetchable record from
+				// scopus?
 			default:
 				// if not implemented, skip the assignment
 				continue
@@ -342,8 +350,8 @@ func updateExternalIDsURL(works []*Work) {
 	}
 }
 
-// updateContributorsLine populates a slice of works with an URI for external ids if its value is
-// missing.
+// updateContributorsLine populates a slice of works with an URI for
+// external ids if its value is missing.
 func updateContributorsLine(works []*Work) {
 	for i, w := range works {
 		contribs := make([]string, len(w.Contributors))
@@ -357,12 +365,13 @@ func updateContributorsLine(works []*Work) {
 	}
 }
 
-// updateMarkup is a tricky function and relies on the underlying template which is passed by a
-// client. So the client must be aware of what is going on here to effectively render works.
+// updateMarkup is a tricky function and relies on the underlying
+// template which is passed by a client. So the client must be aware
+// of what is going on here to effectively render works.
 func updateMarkup(works []*Work) {
 	for i, w := range works {
-		// we escape the whole title using <nowiki></nowiki> but we do want {{sub|}} to be
-		// parsed by the wiki
+		// we escape the whole title using <nowiki></nowiki>
+		// but we do want {{sub|}} to be parsed by the wiki
 		works[i].Title = template.HTML(
 			strings.ReplaceAll(
 				strings.ReplaceAll(

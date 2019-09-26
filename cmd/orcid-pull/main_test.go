@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"bitbucket.org/iharsuvorau/crossref"
 	"bitbucket.org/iharsuvorau/orcid"
 )
 
@@ -104,5 +105,43 @@ func Test_groupByTypeAndYear(t *testing.T) {
 		}
 		t.Logf("markup: %s", markup)
 		//t.Fail()
+	}
+}
+
+func Test_getMissingAuthorsCrossRef(t *testing.T) {
+	ids := []string{
+		"https://orcid.org/0000-0001-8221-9820",
+	}
+
+	logger := log.New(os.Stdout, "", log.LstdFlags)
+
+	cref, err := crossref.New("http://api.crossref.org/v1")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, id := range ids {
+		registry, err := orcid.New(id)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		works, err := registry.FetchWorks(logger)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(works) == 0 {
+			t.Error("amount of works must be bigger than zero")
+		}
+
+		t.Logf("contributors before: %+v", works[0].Contributors)
+
+		err = getMissingAuthorsCrossRef(cref, works[:1], logger)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		t.Logf("contributors after: %+v", works[0].Contributors)
 	}
 }

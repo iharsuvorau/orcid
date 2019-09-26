@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"bitbucket.org/iharsuvorau/crossref"
 	"bitbucket.org/iharsuvorau/mediawiki"
 	"bitbucket.org/iharsuvorau/orcid"
 	"github.com/pkg/errors"
@@ -19,6 +20,7 @@ import (
 
 func main() {
 	uri := flag.String("mwuri", "localhost/mediawiki", "mediawiki URI")
+	crossrefApiURL := flag.String("crossref", "http://api.crossref.org/v1", "crossref API base URL")
 	section := flag.String("section", "Publications", "section title for the publication to look for on a user's page or of the new one to add to the page")
 	category := flag.String("category", "", "category of users to update profile pages for, if it's empty all users' pages will be updated")
 	name := flag.String("name", "", "login name of the bot for updating pages")
@@ -44,25 +46,32 @@ func main() {
 
 	// Update publications on personal pages for each user.
 
-	// exploreUsers discovers users which profiles should be updated by the category assigned to
-	// their profile pages. If you know all your users you don't have to discover them, create a
-	// slice of users with their names and registries by hand.
+	// exploreUsers discovers users which profiles should be updated by the
+	// category assigned to their profile pages. If you know all your users
+	// you don't have to discover them, create a slice of users with their
+	// names and registries by hand.
 	users, err := exploreUsers(*uri, *category, logger)
 	if err != nil {
 		log.Fatal(err)
 	}
 	logger.Printf("users to update: %+v", len(users))
 
-	// updateProfilePages overwrites the section on a user's profile page with the downloaded
-	// publications from registries.
-	err = updateProfilePages(*uri, *name, *pass, *section, users, logger)
+	cref, err := crossref.New(*crossrefApiURL)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// updateProfilePages overwrites the section on a user's profile page
+	// with the downloaded publications from registries.
+	err = updateProfilePages(*uri, *name, *pass, *section, users, logger, cref)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Publications by year
 
-	// To create an aggregate page of PI publications sorted by year, first we need PI users.
+	// To create an aggregate page of PI publications sorted by year, first
+	// we need PI users.
 	usersPI, err := exploreUsers(*uri, "PI", logger)
 	if err != nil {
 		log.Fatal(err)
@@ -80,8 +89,9 @@ type User struct {
 	Orcid *orcid.Registry
 }
 
-// exploreUsers gets users who belong to the category and fetches their publication IDs and creates
-// corresponding registries. If the category is empty, all users are returned.
+// exploreUsers gets users who belong to the category and fetches their
+// publication IDs and creates corresponding registries. If the category is
+// empty, all users are returned.
 func exploreUsers(mwURI, category string, logger *log.Logger) ([]*User, error) {
 	var userTitles []string
 	var err error
@@ -121,7 +131,8 @@ func exploreUsers(mwURI, category string, logger *log.Logger) ([]*User, error) {
 				return
 			}
 
-			logger.Printf("%v discovered", title) // means there are any external links on a profile page
+			// means there are any external links on a profile page
+			logger.Printf("%v discovered", title)
 
 			// create a user and registries
 			user := User{Title: title}
@@ -133,7 +144,9 @@ func exploreUsers(mwURI, category string, logger *log.Logger) ([]*User, error) {
 						errs <- errors.Wrap(err, "failed to create orcid registry")
 					}
 					user.Orcid = r
-					// break after the first appending to add only one orcid from each user page
+					// break after the first appending to
+					// add only one orcid from each user
+					// page
 					break
 				}
 			}
@@ -160,9 +173,9 @@ func exploreUsers(mwURI, category string, logger *log.Logger) ([]*User, error) {
 	return users, err
 }
 
-// updateProfilePages fetches works for each provided user and his registries, updates personal
-// pages and purges cache for the aggregate Publications page.
-func updateProfilePages(mwURI, loginName, loginPass, sectionTitle string, users []*User, logger *log.Logger) error {
+// updateProfilePages fetches works for each user, updates personal pages and
+// purges cache for the aggregate Publications page.
+func updateProfilePages(mwURI, loginName, loginPass, sectionTitle string, users []*User, logger *log.Logger, cref *crossref.Client) error {
 	if users == nil {
 		return nil
 	}
@@ -177,6 +190,11 @@ func updateProfilePages(mwURI, loginName, loginPass, sectionTitle string, users 
 
 		// TODO: use goroutines
 		works, err := u.Orcid.FetchWorks(logger)
+		if err != nil {
+			return err
+		}
+
+		err = getMissingAuthorsCrossRef(cref, works, logger)
 		if err != nil {
 			return err
 		}
@@ -198,6 +216,39 @@ func updateProfilePages(mwURI, loginName, loginPass, sectionTitle string, users 
 		logger.Printf("profile page for %s is updated", u.Title)
 	}
 	return mediawiki.Purge(mwURI, "Publications")
+}
+
+func getMissingAuthorsCrossRef(cref *crossref.Client, works []*orcid.Work, logger *log.Logger) error {
+	for _, w := range works {
+		// skip if there are authors already
+		if len(w.Contributors) > 0 {
+			continue
+		}
+
+		// DOI check
+		if len(string(w.DoiURI)) == 0 {
+			logger.Printf("publication doesn't have DOI: %v", w.Title)
+			continue
+		}
+
+		// crossref download
+		id, err := crossref.DOIFromURL(string(w.DoiURI))
+		if err != nil {
+			return err
+		}
+		work, err := crossref.GetWork(cref, id)
+		if err != nil {
+			return err
+		}
+		type contrib struct {
+			Name string `xml:"credit-name"`
+		}
+		for _, v := range work.Authors {
+			w.Contributors = append(w.Contributors, contrib{Name: v})
+		}
+	}
+
+	return nil
 }
 
 func updatePublicationsByYear(mwURI, loginName, loginPass string, users []*User, logger *log.Logger) error {
