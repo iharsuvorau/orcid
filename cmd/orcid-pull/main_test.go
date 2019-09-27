@@ -145,3 +145,62 @@ func Test_getMissingAuthorsCrossRef(t *testing.T) {
 		t.Logf("contributors after: %+v", works[0].Contributors)
 	}
 }
+
+func Test_fetchPublicationsAndMissingAuthors(t *testing.T) {
+	logger := log.New(os.Stdout, "", log.LstdFlags)
+	const mwBaseURL = "http://hefty.local/~ihar/ims/1.32.2"
+	const category = "PI"
+	const crossrefApiURL = "http://api.crossref.org/v1"
+
+	users, err := exploreUsers(mwBaseURL, category, logger)
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = fetchPublications(logger, users)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, u := range users {
+		if l := len(u.Works); l == 0 {
+			t.Errorf("want more works, have %v", l)
+		}
+	}
+
+	// limit the number of users and works
+	if len(users) > 1 {
+		users = users[:1]
+	}
+	if len(users[0].Works) > 2 {
+		users[0].Works = users[0].Works[:2]
+	}
+
+	t.Log("before")
+	for _, u := range users {
+		t.Log(u.Title)
+		for _, w := range u.Works {
+			t.Log(w.Title)
+			t.Logf("authors: %+v", w.Contributors)
+		}
+	}
+
+	cref, err := crossref.New(crossrefApiURL)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = fetchMissingAuthors(cref, logger, users)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log("after")
+	for _, u := range users {
+		t.Log(u.Title)
+		for _, w := range u.Works {
+			t.Log(w.Title)
+			t.Logf("authors: %+v", w.Contributors)
+		}
+	}
+}
