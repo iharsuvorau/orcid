@@ -122,15 +122,17 @@ type Work struct {
 		Value string       `xml:"external-id-value"`
 		URL   template.URL `xml:"external-id-url"`
 	} `xml:"external-ids>external-id"`
-	URI          string `xml:"url"`
-	Contributors []struct {
-		Name string `xml:"credit-name"`
-	} `xml:"contributors>contributor"`
+	URI          string         `xml:"url"`
+	Contributors []*Contributor `xml:"contributors>contributor"`
 
 	// Convenience fields. Do not belong to the ORCID schema. Used in templates
 
 	DoiURI           template.URL
 	ContributorsLine string
+}
+
+type Contributor struct {
+	Name string `xml:"credit-name"`
 }
 
 // IsFileNew checks the existence of a file and its modification time
