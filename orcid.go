@@ -50,14 +50,15 @@ func (r *Registry) FetchWorks(logger *log.Logger) ([]*Work, error) {
 	var works []*Work
 	var err error
 	var fpath = r.userID + ".xml"
-	var isDumpNeeded bool
+	//var isDumpNeeded bool
 
-	if IsFileNew(fpath, time.Hour*24*6) {
+	// TODO: time condition shoud be specified via a variable by a user
+	if IsFileNew(fpath, time.Hour*24) {
 		logger.Println("reading from a file")
 		works, err = ReadWorks(fpath)
 	} else {
 		logger.Println("downloading via HTTP")
-		isDumpNeeded = true
+		//isDumpNeeded = true
 		works, err = fetchWorks(r, logger)
 	}
 	if err != nil {
@@ -75,16 +76,16 @@ func (r *Registry) FetchWorks(logger *log.Logger) ([]*Work, error) {
 	updateMarkup(works)
 
 	// save works, do not fire error if it is, not essential
-	if isDumpNeeded {
-		f, err := os.Create(fpath)
-		if err != nil {
-			logger.Printf("failed to create file %s: %v", fpath, err)
-		}
-		if err = xml.NewEncoder(f).Encode(works); err != nil {
-			logger.Printf("failed to encode xml: %+v", err)
-		}
-		f.Close()
-	}
+	// if isDumpNeeded {
+	// 	f, err := os.Create(fpath)
+	// 	if err != nil {
+	// 		logger.Printf("failed to create file %s: %v", fpath, err)
+	// 	}
+	// 	if err = xml.NewEncoder(f).Encode(works); err != nil {
+	// 		logger.Printf("failed to encode xml: %+v", err)
+	// 	}
+	// 	f.Close()
+	// }
 
 	return works, nil
 }
