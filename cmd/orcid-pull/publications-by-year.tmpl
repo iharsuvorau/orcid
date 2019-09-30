@@ -3,11 +3,11 @@
 ==== {{(index . 0).Year}} ====
 {{range .}}{{/* works range */}}
 {{- if .DoiURI }}
-* {{if .ContributorsLine}}{{.ContributorsLine}} {{end}}[{{.DoiURI}} <nowiki>{{.Title}}</nowiki>], {{.JournalTitle}}, {{.Year}}.
+* {{if .ContributorsLine}}{{.ContributorsLine}} {{end}}{{if .Year}}({{.Year}}) {{end}}[{{.DoiURI}} <nowiki>{{.Title}}</nowiki>]{{if .JournalTitle}}, ''{{.JournalTitle}}''{{end}}.
 {{- else if .URI }}
-* {{if .ContributorsLine}}{{.ContributorsLine}} {{end}}[{{.URI}} <nowiki>{{.Title}}</nowiki>], {{.JournalTitle}}, {{.Year}}.
+* {{if .ContributorsLine}}{{.ContributorsLine}} {{end}}{{if .Year}}({{.Year}}) {{end}}[{{.URI}} <nowiki>{{.Title}}</nowiki>]{{if .JournalTitle}}, ''{{.JournalTitle}}''{{end}}.
 {{- else }}
-* {{if .ContributorsLine}}{{.ContributorsLine}} {{end}}''{{.Title}}'', {{.JournalTitle}}, {{.Year}}.
+* {{if .ContributorsLine}}{{.ContributorsLine}} {{end}}{{if .Year}}({{.Year}}) {{end}}{{.Title}}{{if .JournalTitle}}, ''{{.JournalTitle}}''{{end}}.
 {{- end -}}
 {{end}}{{/* works range */}}
 {{end}}{{/* work year range */}}
@@ -17,11 +17,11 @@
 ==== {{(index . 0).Year}} ====
 {{range .}}{{/* works range */}}
 {{- if .DoiURI }}
-* {{if .ContributorsLine}}{{.ContributorsLine}} {{end}}[{{.DoiURI}} <nowiki>{{.Title}}</nowiki>], {{.JournalTitle}}, {{.Year}}.
+* {{if .ContributorsLine}}{{.ContributorsLine}} {{end}}{{if .Year}}({{.Year}}) {{end}}[{{.DoiURI}} <nowiki>{{.Title}}</nowiki>]{{if .JournalTitle}}, ''{{.JournalTitle}}''{{end}}.
 {{- else if .URI }}
-* {{if .ContributorsLine}}{{.ContributorsLine}} {{end}}[{{.URI}} <nowiki>{{.Title}}</nowiki>], {{.JournalTitle}}, {{.Year}}.
+* {{if .ContributorsLine}}{{.ContributorsLine}} {{end}}{{if .Year}}({{.Year}}) {{end}}[{{.URI}} <nowiki>{{.Title}}</nowiki>]{{if .JournalTitle}}, ''{{.JournalTitle}}''{{end}}.
 {{- else }}
-* {{if .ContributorsLine}}{{.ContributorsLine}} {{end}}''{{.Title}}'', {{.JournalTitle}}, {{.Year}}.
+* {{if .ContributorsLine}}{{.ContributorsLine}} {{end}}{{if .Year}}({{.Year}}) {{end}}{{.Title}}{{if .JournalTitle}}, ''{{.JournalTitle}}''{{end}}.
 {{- end -}}
 {{end}}{{/* works range */}}
 {{end}}{{/* work year range */}}
@@ -31,11 +31,11 @@
 ==== {{(index . 0).Year}} ====
 {{range .}}{{/* works range */}}
 {{- if .DoiURI }}
-* {{if .ContributorsLine}}{{.ContributorsLine}} {{end}}[{{.DoiURI}} <nowiki>{{.Title}}</nowiki>], {{.JournalTitle}}, {{.Year}}.
+* {{if .ContributorsLine}}{{.ContributorsLine}} {{end}}{{if .Year}}({{.Year}}) {{end}}[{{.DoiURI}} <nowiki>{{.Title}}</nowiki>]{{if .JournalTitle}}, ''{{.JournalTitle}}''{{end}}.
 {{- else if .URI }}
-* {{if .ContributorsLine}}{{.ContributorsLine}} {{end}}[{{.URI}} <nowiki>{{.Title}}</nowiki>], {{.JournalTitle}}, {{.Year}}.
+* {{if .ContributorsLine}}{{.ContributorsLine}} {{end}}{{if .Year}}({{.Year}}) {{end}}[{{.URI}} <nowiki>{{.Title}}</nowiki>]{{if .JournalTitle}}, ''{{.JournalTitle}}''{{end}}.
 {{- else }}
-* {{if .ContributorsLine}}{{.ContributorsLine}} {{end}}''{{.Title}}'', {{.JournalTitle}}, {{.Year}}.
+* {{if .ContributorsLine}}{{.ContributorsLine}} {{end}}{{if .Year}}({{.Year}}) {{end}}{{.Title}}{{if .JournalTitle}}, ''{{.JournalTitle}}''{{end}}.
 {{- end -}}
 {{end}}{{/* works range */}}
 {{end}}{{/* work year range */}}

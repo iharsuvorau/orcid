@@ -56,6 +56,8 @@ func main() {
 	}
 	logger.Printf("users to update: %+v", len(users))
 
+	// TODO: it's not clear, that orcid.FetchWorks is going to look
+	// at a specific file in the file system first for publications
 	if err = fetchPublications(logger, users); err != nil {
 		logger.Fatal(err)
 	}
@@ -73,6 +75,7 @@ func main() {
 	// used by the template in updateProfilePagesWithWorks
 	updateContributorsLine(users) // TODO: make cleaner, hide this detail
 
+	// TODO: not clear, where it's going to save data and how to control it
 	err = dumpXMLData(users)
 	if err != nil {
 		logger.Printf("data dump error: %v", err)
@@ -84,73 +87,76 @@ func main() {
 		logger.Fatal(err)
 	}
 
-	// TODO: update Publications index page
+	err = updatePublicationsByYearWithWorks(*mwBaseURL, *lgName, *lgPass, users, logger, cref)
+	if err != nil {
+		logger.Fatal(err)
+	}
 }
 
-func oldmain() {
-	uri := flag.String("mwuri", "localhost/mediawiki", "mediawiki URI")
-	crossrefApiURL := flag.String("crossref", "http://api.crossref.org/v1", "crossref API base URL")
-	section := flag.String("section", "Publications", "section title for the publication to look for on a user's page or of the new one to add to the page")
-	category := flag.String("category", "", "category of users to update profile pages for, if it's empty all users' pages will be updated")
-	name := flag.String("name", "", "login name of the bot for updating pages")
-	pass := flag.String("pass", "", "login password of the bot for updating pages")
-	logPath := flag.String("log", "", "specify the filepath for a log file, if it's empty all messages are logged into stdout")
-	flag.Parse()
-	if len(*uri) == 0 || len(*name) == 0 || len(*pass) == 0 || len(*section) == 0 {
-		log.Fatal("all flags are compulsory, use -h to see the documentation")
-	}
+// func oldmain() {
+// 	uri := flag.String("mwuri", "localhost/mediawiki", "mediawiki URI")
+// 	crossrefApiURL := flag.String("crossref", "http://api.crossref.org/v1", "crossref API base URL")
+// 	section := flag.String("section", "Publications", "section title for the publication to look for on a user's page or of the new one to add to the page")
+// 	category := flag.String("category", "", "category of users to update profile pages for, if it's empty all users' pages will be updated")
+// 	name := flag.String("name", "", "login name of the bot for updating pages")
+// 	pass := flag.String("pass", "", "login password of the bot for updating pages")
+// 	logPath := flag.String("log", "", "specify the filepath for a log file, if it's empty all messages are logged into stdout")
+// 	flag.Parse()
+// 	if len(*uri) == 0 || len(*name) == 0 || len(*pass) == 0 || len(*section) == 0 {
+// 		log.Fatal("all flags are compulsory, use -h to see the documentation")
+// 	}
 
-	// Log everything to os.Stdout, a file or discard with ioutil.Discard.
-	var logger *log.Logger
-	if len(*logPath) > 0 {
-		f, err := os.Create(*logPath)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer f.Close()
-		logger = log.New(f, "", log.LstdFlags)
-	} else {
-		logger = log.New(os.Stdout, "", log.LstdFlags)
-	}
+// 	// Log everything to os.Stdout, a file or discard with ioutil.Discard.
+// 	var logger *log.Logger
+// 	if len(*logPath) > 0 {
+// 		f, err := os.Create(*logPath)
+// 		if err != nil {
+// 			log.Fatal(err)
+// 		}
+// 		defer f.Close()
+// 		logger = log.New(f, "", log.LstdFlags)
+// 	} else {
+// 		logger = log.New(os.Stdout, "", log.LstdFlags)
+// 	}
 
-	// Update publications on personal pages for each user.
+// 	// Update publications on personal pages for each user.
 
-	// exploreUsers discovers users which profiles should be updated by the
-	// category assigned to their profile pages. If you know all your users
-	// you don't have to discover them, create a slice of users with their
-	// names and registries by hand.
-	users, err := exploreUsers(*uri, *category, logger)
-	if err != nil {
-		log.Fatal(err)
-	}
-	logger.Printf("users to update: %+v", len(users))
+// 	// exploreUsers discovers users which profiles should be updated by the
+// 	// category assigned to their profile pages. If you know all your users
+// 	// you don't have to discover them, create a slice of users with their
+// 	// names and registries by hand.
+// 	users, err := exploreUsers(*uri, *category, logger)
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	logger.Printf("users to update: %+v", len(users))
 
-	cref, err := crossref.New(*crossrefApiURL)
-	if err != nil {
-		log.Fatal(err)
-	}
+// 	cref, err := crossref.New(*crossrefApiURL)
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
 
-	// updateProfilePages overwrites the section on a user's profile page
-	// with the downloaded publications from registries.
-	err = updateProfilePages(*uri, *name, *pass, *section, users, logger, cref)
-	if err != nil {
-		log.Fatal(err)
-	}
+// 	// updateProfilePages overwrites the section on a user's profile page
+// 	// with the downloaded publications from registries.
+// 	err = updateProfilePages(*uri, *name, *pass, *section, users, logger, cref)
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
 
-	// Publications by year
+// 	// Publications by year
 
-	// To create an aggregate page of PI publications sorted by year, first
-	// we need PI users.
-	usersPI, err := exploreUsers(*uri, "PI", logger)
-	if err != nil {
-		log.Fatal(err)
-	}
-	logger.Printf("PI users to process: %+v", len(usersPI))
+// 	// To create an aggregate page of PI publications sorted by year, first
+// 	// we need PI users.
+// 	usersPI, err := exploreUsers(*uri, "PI", logger)
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	logger.Printf("PI users to process: %+v", len(usersPI))
 
-	if err = updatePublicationsByYear(*uri, *name, *pass, usersPI, logger, cref); err != nil {
-		log.Fatal(err)
-	}
-}
+// 	if err = updatePublicationsByYear(*uri, *name, *pass, usersPI, logger, cref); err != nil {
+// 		log.Fatal(err)
+// 	}
+// }
 
 func flagsStringFatalCheck(ss ...*string) {
 	for _, s := range ss {
@@ -180,7 +186,12 @@ func dumpXMLData(users []*User) error {
 // hours.
 func isFileNew(fpath string, maxDuration time.Duration) bool {
 	f, err := os.Open(fpath)
-	defer f.Close()
+	defer func() {
+		err = f.Close()
+		if err != nil {
+			log.Println("isFileNew error:", err)
+		}
+	}()
 
 	if err != nil {
 		return false
@@ -191,12 +202,7 @@ func isFileNew(fpath string, maxDuration time.Duration) bool {
 		return false
 	}
 
-	mod := stat.ModTime()
-	if time.Since(mod) > maxDuration {
-		return false
-	}
-
-	return true
+	return time.Since(stat.ModTime()) < maxDuration
 }
 
 // updateContributorsLine populates a slice of works with an URI for
@@ -304,19 +310,28 @@ func exploreUsers(mwURI, category string, logger *log.Logger) ([]*User, error) {
 }
 
 func fetchPublications(logger *log.Logger, users []*User) error {
-	if users == nil || len(users) == 0 {
+	if len(users) == 0 {
 		return nil
 	}
 
 	var err error
-	for _, u := range users {
-		logger.Printf("fetching works from ORCID for %v", u.Title)
-		// TODO: use goroutines
-		u.Works, err = u.Orcid.FetchWorks(logger)
+	var fpath string
+	var obsoleteDuration = time.Hour * 24 // TODO: time condition should be passed by a caller
+
+	for _, u := range users { // TODO: use goroutines
+		fpath = u.Orcid.UserID() + ".xml"
+		if isFileNew(fpath, obsoleteDuration) {
+			logger.Printf("reading from a file for %v", u.Title)
+			u.Works, err = orcid.ReadWorks(fpath)
+		} else {
+			logger.Printf("fetching works from ORCID for %v", u.Title)
+			u.Works, err = u.Orcid.FetchWorks(logger)
+		}
 		if err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -370,7 +385,7 @@ func fetchMissingAuthors(cref *crossref.Client, logger *log.Logger, users []*Use
 // updateProfilePagesWithWorks fetches works for each user, updates personal pages and
 // purges cache for the aggregate Publications page.
 func updateProfilePagesWithWorks(mwURI, lgName, lgPass, sectionTitle string, users []*User, logger *log.Logger, cref *crossref.Client) error {
-	if users == nil || len(users) == 0 {
+	if len(users) == 0 {
 		return nil
 	}
 
@@ -398,52 +413,84 @@ func updateProfilePagesWithWorks(mwURI, lgName, lgPass, sectionTitle string, use
 	return nil
 }
 
-// updateProfilePages fetches works for each user, updates personal pages and
-// purges cache for the aggregate Publications page.
-func updateProfilePages(mwURI, loginName, loginPass, sectionTitle string, users []*User, logger *log.Logger, cref *crossref.Client) error {
-	if users == nil {
+func updatePublicationsByYearWithWorks(mwURI, lgName, lgPass string, users []*User, logger *log.Logger, cref *crossref.Client) error {
+	if len(users) == 0 {
 		return nil
 	}
 
 	const (
-		tmpl         = "orcid-list.tmpl"
+		tmpl         = "publications-by-year.tmpl" // TODO: should be passed by a user
+		pageTitle    = "PI_Publications_By_Year"
 		contentModel = "wikitext"
+		sectionTitle = "Publications By Year"
 	)
 
+	var works = []*orcid.Work{}
 	for _, u := range users {
-		logger.Printf("fetching works from ORCID for %v", u.Title)
-
-		// TODO: use goroutines
-		works, err := u.Orcid.FetchWorks(logger)
-		if err != nil {
-			return err
-		}
-
-		logger.Println("starting crossref authors checking")
-		err = getMissingAuthorsCrossRef(cref, works, logger)
-		if err != nil {
-			return err
-		}
-		logger.Println("crossref authors checking has been finished")
-
-		byTypeAndYear := groupByTypeAndYear(works)
-
-		logger.Println("publications has been downloaded")
-		markup, err := renderTmpl(byTypeAndYear, tmpl)
-		if err != nil {
-			return err
-		}
-
-		logger.Println("publications has been rendered")
-		_, err = mediawiki.UpdatePage(mwURI, u.Title, markup, contentModel,
-			loginName, loginPass, sectionTitle)
-		if err != nil {
-			return err
-		}
-		logger.Printf("profile page for %s is updated", u.Title)
+		works = append(works, u.Works...)
 	}
+
+	byTypeAndYear := groupByTypeAndYear(works)
+
+	markup, err := renderTmpl(byTypeAndYear, tmpl)
+	if err != nil {
+		return err
+	}
+	_, err = mediawiki.UpdatePage(mwURI, pageTitle, markup, contentModel, lgName, lgPass, sectionTitle)
+	if err != nil {
+		return err
+	}
+
+	logger.Printf("%s page has been updated", pageTitle)
 	return mediawiki.Purge(mwURI, "Publications")
 }
+
+// updateProfilePages fetches works for each user, updates personal pages and
+// purges cache for the aggregate Publications page.
+// func updateProfilePages(mwURI, loginName, loginPass, sectionTitle string, users []*User, logger *log.Logger, cref *crossref.Client) error {
+// 	if users == nil {
+// 		return nil
+// 	}
+
+// 	const (
+// 		tmpl         = "orcid-list.tmpl"
+// 		contentModel = "wikitext"
+// 	)
+
+// 	for _, u := range users {
+// 		logger.Printf("fetching works from ORCID for %v", u.Title)
+
+// 		// TODO: use goroutines
+// 		works, err := u.Orcid.FetchWorks(logger)
+// 		if err != nil {
+// 			return err
+// 		}
+
+// 		logger.Println("starting crossref authors checking")
+// 		err = getMissingAuthorsCrossRef(cref, works, logger)
+// 		if err != nil {
+// 			return err
+// 		}
+// 		logger.Println("crossref authors checking has been finished")
+
+// 		byTypeAndYear := groupByTypeAndYear(works)
+
+// 		logger.Println("publications has been downloaded")
+// 		markup, err := renderTmpl(byTypeAndYear, tmpl)
+// 		if err != nil {
+// 			return err
+// 		}
+
+// 		logger.Println("publications has been rendered")
+// 		_, err = mediawiki.UpdatePage(mwURI, u.Title, markup, contentModel,
+// 			loginName, loginPass, sectionTitle)
+// 		if err != nil {
+// 			return err
+// 		}
+// 		logger.Printf("profile page for %s is updated", u.Title)
+// 	}
+// 	return mediawiki.Purge(mwURI, "Publications")
+// }
 
 func getMissingAuthorsCrossRef(cref *crossref.Client, works []*orcid.Work, logger *log.Logger) error {
 	for _, w := range works {
@@ -480,69 +527,69 @@ func getMissingAuthorsCrossRef(cref *crossref.Client, works []*orcid.Work, logge
 	return nil
 }
 
-func updatePublicationsByYear(mwURI, loginName, loginPass string, users []*User, logger *log.Logger, cref *crossref.Client) error {
-	if users == nil {
-		return nil
-	}
+// func updatePublicationsByYear(mwURI, loginName, loginPass string, users []*User, logger *log.Logger, cref *crossref.Client) error {
+// 	if users == nil {
+// 		return nil
+// 	}
 
-	const (
-		tmpl         = "publications-by-year.tmpl"
-		pageTitle    = "PI_Publications_By_Year"
-		contentModel = "wikitext"
-		sectionTitle = "Publications By Year"
-	)
+// 	const (
+// 		tmpl         = "publications-by-year.tmpl"
+// 		pageTitle    = "PI_Publications_By_Year"
+// 		contentModel = "wikitext"
+// 		sectionTitle = "Publications By Year"
+// 	)
 
-	logger.Printf("updating %s...", pageTitle)
+// 	logger.Printf("updating %s...", pageTitle)
 
-	// fetching works for all users
-	var works = []*orcid.Work{}
-	for _, u := range users {
-		logger.Printf("fetching works from ORCID for %v", u.Title)
-		// TODO: use goroutines
+// 	// fetching works for all users
+// 	var works = []*orcid.Work{}
+// 	for _, u := range users {
+// 		logger.Printf("fetching works from ORCID for %v", u.Title)
+// 		// TODO: use goroutines
 
-		// fetch only if no XML is saved
+// 		// fetch only if no XML is saved
 
-		var fpath = u.Orcid.UserID() + ".xml"
-		var w = []*orcid.Work{}
-		var err error
+// 		var fpath = u.Orcid.UserID() + ".xml"
+// 		var w = []*orcid.Work{}
+// 		var err error
 
-		if orcid.IsFileNew(fpath, time.Hour*24) {
-			w, err = orcid.ReadWorks(fpath)
-			if err != nil {
-				return err
-			}
-		} else {
-			w, err = u.Orcid.FetchWorks(logger)
-			if err != nil {
-				return err
-			}
-		}
+// 		if orcid.IsFileNew(fpath, time.Hour*24) {
+// 			w, err = orcid.ReadWorks(fpath)
+// 			if err != nil {
+// 				return err
+// 			}
+// 		} else {
+// 			w, err = u.Orcid.FetchWorks(logger)
+// 			if err != nil {
+// 				return err
+// 			}
+// 		}
 
-		works = append(works, w...)
-	}
+// 		works = append(works, w...)
+// 	}
 
-	err := getMissingAuthorsCrossRef(cref, works, logger) // TODO: check references
-	if err != nil {
-		return err
-	}
+// 	err := getMissingAuthorsCrossRef(cref, works, logger) // TODO: check references
+// 	if err != nil {
+// 		return err
+// 	}
 
-	byTypeAndYear := groupByTypeAndYear(works)
+// 	byTypeAndYear := groupByTypeAndYear(works)
 
-	// updating the page
-	markup, err := renderTmpl(byTypeAndYear, tmpl)
-	if err != nil {
-		return err
-	}
-	_, err = mediawiki.UpdatePage(mwURI, pageTitle, markup, contentModel,
-		loginName, loginPass, sectionTitle)
-	if err != nil {
-		return err
-	}
+// 	// updating the page
+// 	markup, err := renderTmpl(byTypeAndYear, tmpl)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	_, err = mediawiki.UpdatePage(mwURI, pageTitle, markup, contentModel,
+// 		loginName, loginPass, sectionTitle)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	// Purging of neccessary pages.
-	logger.Printf("%s page has been updated", pageTitle)
-	return mediawiki.Purge(mwURI, "Publications")
-}
+// 	// Purging of neccessary pages.
+// 	logger.Printf("%s page has been updated", pageTitle)
+// 	return mediawiki.Purge(mwURI, "Publications")
+// }
 
 func renderTmpl(data interface{}, tmplPath string) (string, error) {
 	var tmpl = template.Must(template.ParseFiles(tmplPath))
