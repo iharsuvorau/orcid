@@ -8,6 +8,7 @@ import (
 	"html/template"
 	"log"
 	"os"
+	"regexp"
 	"sort"
 	"strings"
 	"sync"
@@ -511,4 +512,41 @@ func groupByTypeAndYear(works []*orcid.Work) map[string][][]*orcid.Work {
 	}
 
 	return byTypeAndYear
+}
+
+func parseCitationAuthorsIEEE(s string) []string {
+	// TODO: many different formats and name dividers
+
+	re := regexp.MustCompile(`.*\(\d{4}\)`)
+	matches := re.FindStringSubmatch(s)
+
+	if len(matches) == 0 {
+		return nil
+	}
+
+	match := matches[0]
+	match = match[:len(match)-7] // remove (YYYY) at the end
+	match = strings.Trim(match, "\"")
+	match = strings.Trim(match, " ")
+	match = strings.Trim(match, ".")
+	authors := strings.Split(match, ", ")
+	return authors
+}
+
+func parseCitationAuthorsBibTeX(s string) []string {
+	// TODO: check for @ at the beginning to parse machine readable info: author={... and ... and ...}
+
+	re := regexp.MustCompile(`(.*)?(?:\W\s")`)
+	matches := re.FindStringSubmatch(s)
+
+	if len(matches) == 0 {
+		return nil
+	}
+
+	match := matches[0]
+	match = strings.Trim(match, "\"")
+	match = strings.Trim(match, " ")
+	match = strings.Trim(match, ",")
+	authors := strings.Split(match, ", ")
+	return authors
 }
