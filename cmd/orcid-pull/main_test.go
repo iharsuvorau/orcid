@@ -173,9 +173,9 @@ func Test_fetchPublicationsAndMissingAuthors(t *testing.T) {
 	if len(users) > 1 {
 		users = users[:1]
 	}
-	if len(users[0].Works) > 2 {
-		users[0].Works = users[0].Works[:2]
-	}
+	// if len(users[0].Works) > 2 {
+	// 	users[0].Works = users[0].Works[:2]
+	// }
 
 	t.Log("before")
 	for _, u := range users {
@@ -201,7 +201,9 @@ func Test_fetchPublicationsAndMissingAuthors(t *testing.T) {
 		t.Log(u.Title)
 		for _, w := range u.Works {
 			t.Log(w.Title)
-			t.Logf("authors: %+v", w.Contributors)
+			for _, v := range w.Contributors {
+				t.Logf("\tauthor: %+v", v)
+			}
 		}
 	}
 }
