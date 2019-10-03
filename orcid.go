@@ -49,18 +49,10 @@ func (r *Registry) UserID() string {
 func (r *Registry) FetchWorks(logger *log.Logger) ([]*Work, error) {
 	var works []*Work
 	var err error
-	var fpath = r.userID + ".xml"
-	//var isDumpNeeded bool
 
-	// TODO: time condition shoud be specified via a variable by a user
-	if IsFileNew(fpath, time.Hour*24) {
-		logger.Println("reading from a file")
-		works, err = ReadWorks(fpath)
-	} else {
-		logger.Println("downloading via HTTP")
-		//isDumpNeeded = true
-		works, err = fetchWorks(r, logger)
-	}
+	logger.Println("downloading via HTTP")
+	works, err = fetchWorks(r, logger)
+
 	if err != nil {
 		return nil, err
 	}
@@ -74,18 +66,6 @@ func (r *Registry) FetchWorks(logger *log.Logger) ([]*Work, error) {
 	updateExternalIDsURL(works)
 	updateContributorsLine(works)
 	updateMarkup(works)
-
-	// save works, do not fire error if it is, not essential
-	// if isDumpNeeded {
-	// 	f, err := os.Create(fpath)
-	// 	if err != nil {
-	// 		logger.Printf("failed to create file %s: %v", fpath, err)
-	// 	}
-	// 	if err = xml.NewEncoder(f).Encode(works); err != nil {
-	// 		logger.Printf("failed to encode xml: %+v", err)
-	// 	}
-	// 	f.Close()
-	// }
 
 	return works, nil
 }
@@ -113,12 +93,9 @@ type Work struct {
 	Path         string        `xml:"path,attr"`
 	Title        template.HTML `xml:"title>title"`
 	JournalTitle string        `xml:"journal-title"`
-	Citation     struct {
-		Type  string `xml:"citation-type"`
-		Value string `xml:"citation-value"`
-	} `xml:"citation"`
-	Type        string `xml:"type"`
-	ExternalIDs []struct {
+	Citation     *Citation     `xml:"citation"`
+	Type         string        `xml:"type"`
+	ExternalIDs  []struct {
 		Type  string       `xml:"external-id-type"` // doi = Digital Object Identifier, eid = Scopus
 		Value string       `xml:"external-id-value"`
 		URL   template.URL `xml:"external-id-url"`
@@ -132,32 +109,13 @@ type Work struct {
 	ContributorsLine string
 }
 
-type Contributor struct {
-	Name string `xml:"credit-name"`
+type Citation struct {
+	Type  string `xml:"citation-type"`
+	Value string `xml:"citation-value"`
 }
 
-// IsFileNew checks the existence of a file and its modification time
-// and returns true if it was modified during the previous maxDuration
-// hours.
-func IsFileNew(fpath string, maxDuration time.Duration) bool {
-	f, err := os.Open(fpath)
-	defer f.Close()
-
-	if err != nil {
-		return false
-	}
-
-	stat, err := os.Stat(fpath)
-	if err != nil {
-		return false
-	}
-
-	mod := stat.ModTime()
-	if time.Since(mod) > maxDuration {
-		return false
-	}
-
-	return true
+type Contributor struct {
+	Name string `xml:"credit-name"`
 }
 
 // ReadWorks decodes works from an XML-file with works saved as
