@@ -64,6 +64,22 @@ func main() {
 		logger.Fatal(err)
 	}
 
+	// saving XML for each user
+	{
+		var fpath string
+		var err error
+		var obsoleteDuration = time.Hour * 23 // TODO: time condition should be passed by a caller
+		for _, u := range users {
+			fpath = u.Orcid.UserID() + ".xml"
+			if !isFileNew(fpath, obsoleteDuration) { // saves once in 23 hours
+				err = dumpUserWorks(u)
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+		}
+	}
+
 	// used by the template in updateProfilePagesWithWorks
 	updateContributorsLine(users) // TODO: make cleaner, hide this detail
 
@@ -183,10 +199,7 @@ func fetchPublications(logger *log.Logger, users []*User) error {
 			u.Works, err = orcid.ReadWorks(fpath)
 		} else {
 			logger.Printf("fetching works from ORCID for %v", u.Title)
-			if u.Works, err = u.Orcid.FetchWorks(logger); err != nil {
-				return err
-			}
-			err = dumpUserWorks(u)
+			u.Works, err = u.Orcid.FetchWorks(logger)
 		}
 		if err != nil {
 			return err
