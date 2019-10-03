@@ -210,33 +210,41 @@ func Test_parseCitationAuthorsIEEE(t *testing.T) {
 	tests := []struct {
 		name     string
 		citation string
-		result   []string
+		result   string
+		wantErr  bool
 	}{
 		{
 			name:     "A",
 			citation: "Saoni Banerji, R.Senthil Kumar (2010). Diagnosis of Systems Via Condition Monitoring Based on Time Frequency Representations. International Journal of Recent Trends in Engineering & Research, 4 (2), 20−24.01.IJRTET 04.02.102.",
-			result:   []string{"Saoni Banerji", "R.Senthil Kumar"},
+			result:   "Saoni Banerji, R.Senthil Kumar",
+			wantErr:  false,
 		},
 		{
 			name:     "B",
 			citation: `S. Banerji, J. Madrenas and D. Fernandez, "Optimization of parameters for CMOS MEMS resonant pressure sensors," 2015 Symposium on Design, Test, Integration and Packaging of MEMS/MOEMS (DTIP), Montpellier, 2015, pp. 1-6. doi: 10.1109/DTIP.2015.7160984`,
-			result:   []string{"S. Banerji", "J. Madrenas and D. Fernandez"},
+			result:   "S. Banerji, J. Madrenas and D. Fernandez",
+			wantErr:  false,
 		},
 		{
 			name:     "C",
 			citation: ` @phdthesis{banerji2012ultrasonic, title= {Ultrasonic Link IC for Wireless Power and Data Transfer Deep in Body}, author= {Banerji, Saoni and Ling, Goh Wang and Cheong, Jia Hao and Je, Minkyu}, year= {2012}, school= {Nanyang Technological University}} `,
-			result:   []string{"Banerji, Saoni", "Ling, Goh Wang", "Cheong, Jia Hao", "Je, Minkyu"},
+			result:   "Banerji, Saoni and Ling, Goh Wang and Cheong, Jia Hao and Je, Minkyu",
+			wantErr:  false,
 		},
 		{
 			name:     "D",
 			citation: `Banerji, Saoni & Chiva, Josep. (2016). Under pressure? Do not lose direction! Smart sensors: Development of MEMS and CMOS on the same platform.`,
-			result:   []string{"Banerji, Saoni", "Chiva, Josep"},
+			result:   "Banerji, Saoni & Chiva, Josep",
+			wantErr:  false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			res := parseCitationAuthorsIEEE(tt.citation)
+			res, err := parseCitationAuthorsIEEE(tt.citation)
+			if err != nil && !tt.wantErr {
+				t.Error(err)
+			}
 			if !reflect.DeepEqual(res, tt.result) {
 				t.Errorf("want %q, got %q", tt.result, res)
 			}
@@ -248,24 +256,65 @@ func Test_parseCitationAuthorsBibTeX(t *testing.T) {
 	tests := []struct {
 		name     string
 		citation string
-		result   []string
+		result   string
+		wantErr  bool
 	}{
 		{
 			name: "A",
 			citation: `S. Banerji, W. L. Goh, J. H. Cheong and M. Je, "CMUT ultrasonic power link front-end for wireless power transfer deep in body," 2013 IEEE MTT-S International Microwave Workshop Series on RF and Wireless Technologies for Biomedical and Healthcare Applications (IMWS-BIO), Singapore, 2013, pp. 1-3.
 doi: 10.1109/IMWS-BIO.2013.6756176`,
-			result: []string{"S. Banerji", "W. L. Goh", "J. H. Cheong and M. Je"},
+			result:  "S. Banerji, W. L. Goh, J. H. Cheong and M. Je",
+			wantErr: false,
 		},
 		{
 			name:     "B",
 			citation: `@inproceedings{Vunder_2018,doi = {10.1109/hsi.2018.8431062},url = {https://doi.org/10.1109%2Fhsi.2018.8431062},year = 2018,month = {jul},publisher = {{IEEE}},author = {Veiko Vunder and Robert Valner and Conor McMahon and Karl Kruusamae and Mitch Pryor},title = {Improved Situational Awareness in {ROS} Using Panospheric Vision and Virtual Reality},booktitle = {2018 11th International Conference on Human System Interaction ({HSI})}}`,
-			result:   []string{"Veiko Vunder", "Robert Valner", "Conor McMahon", "Karl Kruusamae", "Mitch Pryor"},
+			result:   "Veiko Vunder and Robert Valner and Conor McMahon and Karl Kruusamae and Mitch Pryor",
+			wantErr:  false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			res := parseCitationAuthorsBibTeX(tt.citation)
+			res, err := parseCitationAuthorsBibTeX(tt.citation)
+			if err != nil && !tt.wantErr {
+				t.Error(err)
+			}
+			if !reflect.DeepEqual(res, tt.result) {
+				t.Errorf("want %q, got %q", tt.result, res)
+			}
+		})
+	}
+}
+
+func Test_parseCitationAuthorsBibTeXStrict(t *testing.T) {
+	tests := []struct {
+		name     string
+		citation string
+		result   string
+		wantErr  bool
+	}{
+		{
+			name: "A",
+			citation: `S. Banerji, W. L. Goh, J. H. Cheong and M. Je, "CMUT ultrasonic power link front-end for wireless power transfer deep in body," 2013 IEEE MTT-S International Microwave Workshop Series on RF and Wireless Technologies for Biomedical and Healthcare Applications (IMWS-BIO), Singapore, 2013, pp. 1-3.
+doi: 10.1109/IMWS-BIO.2013.6756176`,
+			result:  "",
+			wantErr: true,
+		},
+		{
+			name:     "B",
+			citation: `@inproceedings{Vunder_2018,doi = {10.1109/hsi.2018.8431062},url = {https://doi.org/10.1109%2Fhsi.2018.8431062},year = 2018,month = {jul},publisher = {{IEEE}},author = {Veiko Vunder and Robert Valner and Conor McMahon and Karl Kruusamae and Mitch Pryor},title = {Improved Situational Awareness in {ROS} Using Panospheric Vision and Virtual Reality},booktitle = {2018 11th International Conference on Human System Interaction ({HSI})}}`,
+			result:   "Veiko Vunder and Robert Valner and Conor McMahon and Karl Kruusamae and Mitch Pryor",
+			wantErr:  false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			res, err := parseCitationAuthorsBibTeXStrict(tt.citation)
+			if err != nil && !tt.wantErr {
+				t.Error("parsing failed:", err)
+			}
 			if !reflect.DeepEqual(res, tt.result) {
 				t.Errorf("want %q, got %q", tt.result, res)
 			}
