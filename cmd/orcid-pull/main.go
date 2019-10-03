@@ -209,53 +209,6 @@ func fetchPublications(logger *log.Logger, users []*User) error {
 	return nil
 }
 
-// func fetchMissingAuthors(cref *crossref.Client, logger *log.Logger, users []*User) error {
-// 	logger.Println("starting crossref authors checking")
-// 	start := time.Now()
-// 	defer func() {
-// 		logger.Println("crossref authors checking has been finished in", time.Since(start))
-// 	}()
-
-// 	for _, u := range users {
-// 		for _, w := range u.Works {
-// 			// skip if there are authors already
-// 			if len(w.Contributors) > 0 {
-// 				continue
-// 			}
-
-// 			// DOI check
-// 			if len(string(w.DoiURI)) == 0 {
-// 				//logger.Printf("publication doesn't have DOI: %v", w.Title)
-// 				continue
-// 			}
-
-// 			// crossref download
-// 			id, err := crossref.DOIFromURL(string(w.DoiURI))
-// 			if err != nil {
-// 				return err
-// 			}
-// 			logger.Printf("crossref fetch: %s, %s", w.Title, id)
-// 			work, err := crossref.GetWork(cref, id)
-// 			if err != nil {
-// 				logger.Printf("ignoring crossref fetch error: %v", err)
-// 				err = nil                   // ignore this error
-// 				time.Sleep(time.Second * 1) // let the CrossServer to rest a bit
-// 				continue
-// 			}
-
-// 			if w.Contributors == nil {
-// 				w.Contributors = []*orcid.Contributor{}
-// 			}
-
-// 			for _, v := range work.Authors {
-// 				w.Contributors = append(w.Contributors, &orcid.Contributor{Name: v})
-// 			}
-// 		}
-// 	}
-
-// 	return nil
-// }
-
 func fetchMissingAuthors(cref *crossref.Client, logger *log.Logger, users []*User) error {
 	logger.Println("starting crossref authors checking")
 	start := time.Now()
