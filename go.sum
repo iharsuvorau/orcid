@@ -1,8 +1,0 @@
-bitbucket.org/iharsuvorau/crossref v0.0.0-20190926103312-db3cf5a65c44 h1:Z82FDFRQD5uAu21sWW4EuFky6BobTMDGlioRcQultZ8=
-bitbucket.org/iharsuvorau/crossref v0.0.0-20190926103312-db3cf5a65c44/go.mod h1:TCAmt73Hp29uRIHmbBBqQgZh1gc421AnZnf5z0tN/+E=
-bitbucket.org/iharsuvorau/mediawiki v0.0.0-20190910151430-d86370c34e42 h1:DWb22vVhjTLU/ZIYSu7b+YsAe1JrYfN5cfC+ahrbPow=
-bitbucket.org/iharsuvorau/mediawiki v0.0.0-20190910151430-d86370c34e42/go.mod h1:xxH38AOiz8Qh62D2s+zN6KlH3/02h7k6aQXNbwiHzOQ=
-github.com/nickng/bibtex v1.0.1 h1:Uop3DVOdQdrTamXfxr65f9KyHrd4RhttXwHi1BY6Wk0=
-github.com/nickng/bibtex v1.0.1/go.mod h1:0qHZj8RRrLaGXyPoF9odM3M1EX1HnWiwACyR3wgGf8U=
-github.com/pkg/errors v0.8.1 h1:iURUrRGxPUNPdy5/HRSm+Yj6okJ6UtLINN0Q9M4+h3I=
-github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
