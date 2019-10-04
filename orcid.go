@@ -22,10 +22,12 @@ import (
 	"time"
 )
 
+// Client is the ORCID API client for requests handling.
 type Client struct {
 	apiBase *url.URL
 }
 
+// New return a client.
 func New(apiBase string) (*Client, error) {
 	// the leading slash is needed to resolve dependent URLs further
 	apiBase = strings.TrimRight(apiBase, "/") + "/"
@@ -38,8 +40,10 @@ func New(apiBase string) (*Client, error) {
 	return &Client{apiBase: u}, nil
 }
 
+// ID is an ORCID.
 type ID string
 
+// IDFromURL creates ID from an URL.
 func IDFromURL(s string) (ID, error) {
 	if !strings.HasPrefix(s, "http") {
 		s = "https://" + s
@@ -52,10 +56,12 @@ func IDFromURL(s string) (ID, error) {
 	return ID(id), nil
 }
 
+// IsEmpty checks if the ID is an empty string.
 func (id ID) IsEmpty() bool {
 	return string(id) == ""
 }
 
+// String returns ID.
 func (id ID) String() string {
 	return string(id)
 }
@@ -99,16 +105,24 @@ type Work struct {
 	ContributorsLine string
 }
 
+// Citation is an ORCID citation field.
 type Citation struct {
 	Type  string `xml:"citation-type"`
 	Value string `xml:"citation-value"`
 }
 
+// Contributor is an ORCID contributor.
 type Contributor struct {
 	Name string `xml:"credit-name"`
 }
 
-func FetchWorks(c *Client, id ID, logger *log.Logger) ([]*Work, error) {
+// WorksModifier is a general type for any function you can pass to FetchWorks
+// or ReadWorks to mutate the works with any arbitrary logic which a user of a
+// library might need.
+type WorksModifier func([]*Work)
+
+// FetchWorks downloads publications from ORCID.
+func FetchWorks(c *Client, id ID, logger *log.Logger, mods ...WorksModifier) ([]*Work, error) {
 	var works []*Work
 	var err error
 
@@ -123,17 +137,17 @@ func FetchWorks(c *Client, id ID, logger *log.Logger) ([]*Work, error) {
 		return works[i].Year > works[j].Year
 	})
 
-	// update convenience fields
-	updateExternalIDsURL(works)
-	updateContributorsLine(works)
-	updateMarkup(works)
+	for _, mod := range mods {
+		mod(works)
+	}
 
 	return works, nil
 }
 
-// ReadWorks decodes works from an XML-file with works saved as
-// top-level elements.
-func ReadWorks(path string) ([]*Work, error) {
+// ReadWorks decodes publications from an XML-file with publications
+// saved as top-level elements. Basically, it decodes an output of
+// xml.Marshal([]*Work) back into []*Work.
+func ReadWorks(path string, mods ...WorksModifier) ([]*Work, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -154,6 +168,10 @@ func ReadWorks(path string) ([]*Work, error) {
 			return nil, err
 		}
 		works = append(works, &work)
+	}
+
+	for _, mod := range mods {
+		mod(works)
 	}
 
 	return works, nil
@@ -308,81 +326,4 @@ func simplifyString(s string) string {
 				"(", ""),
 			")", ""),
 		"-", "")
-}
-
-// updateExternalIDsURL populates a slice of works with an URI for
-// external ids if its value is missing.
-func updateExternalIDsURL(works []*Work) {
-	var uri string
-	for i, w := range works {
-		for ii, id := range w.ExternalIDs {
-			uri = ""
-			switch id.Type {
-			case "doi":
-				if len(id.URL) > 0 {
-					uri = string(id.URL)
-				} else if len(id.Value) > 0 {
-					uri = fmt.Sprintf("http://doi.org/%s", id.Value)
-				} else {
-					continue
-				}
-				works[i].DoiURI = template.URL(uri)
-			case "eid":
-				// TODO: is there a way to generate
-				// freely fetchable record from
-				// scopus?
-			default:
-				// if not implemented, skip the assignment
-				continue
-			}
-			works[i].ExternalIDs[ii].URL = template.URL(uri)
-		}
-
-	}
-}
-
-// updateContributorsLine populates a slice of works with an URI for
-// external ids if its value is missing.
-func updateContributorsLine(works []*Work) {
-	for i, w := range works {
-		contribs := make([]string, len(w.Contributors))
-		for ii, c := range w.Contributors {
-			contribs[ii] = c.Name
-		}
-
-		// formatting of contributors is according to
-		// https://research.moreheadstate.edu/c.php?g=107001&p=695197
-		works[i].ContributorsLine = strings.Join(contribs, ", ")
-	}
-}
-
-// updateMarkup is a tricky function and relies on the underlying
-// template which is passed by a client. So the client must be aware
-// of what is going on here to effectively render works.
-func updateMarkup(works []*Work) {
-	for i, w := range works {
-		// we escape the whole title using <nowiki></nowiki>
-		// but we do want {{sub|}} to be parsed by the wiki
-		works[i].Title = template.HTML(
-			strings.ReplaceAll(
-				strings.ReplaceAll(
-					strings.ReplaceAll(
-						strings.ReplaceAll(
-							strings.ReplaceAll(
-								strings.ReplaceAll(string(w.Title), "<inf>", "</nowiki>{{sub|"),
-								"</inf>", "}}<nowiki>"),
-							"&lt;inf&gt;", "</nowiki>{{sub|"),
-						"&lt;/inf&gt;", "}}<nowiki>"),
-					"<sup>", "</nowiki>{{sup|"),
-				"</sup>", "}}<nowiki>"),
-		)
-		contribs := make([]string, len(w.Contributors))
-		for ii, c := range w.Contributors {
-			contribs[ii] = c.Name
-		}
-
-		// formatting of contributors is according to
-		// https://research.moreheadstate.edu/c.php?g=107001&p=695197
-		works[i].ContributorsLine = strings.Join(contribs, ", ")
-	}
 }
