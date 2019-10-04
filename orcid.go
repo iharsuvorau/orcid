@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"io/ioutil"
 	"log"
 	"math"
 	"net/http"
@@ -21,53 +22,42 @@ import (
 	"time"
 )
 
-type Registry struct {
-	userID  string
-	apiBase string
+type Client struct {
+	apiBase *url.URL
 }
 
-func New(idURI string) (*Registry, error) {
-	uri, err := url.Parse(idURI)
+func New(apiBase string) (*Client, error) {
+	// the leading slash is needed to resolve dependent URLs further
+	apiBase = strings.TrimRight(apiBase, "/") + "/"
+
+	u, err := url.Parse(apiBase)
 	if err != nil {
 		return nil, err
 	}
 
-	userID := strings.Trim(uri.Path, "/")
-
-	return &Registry{
-		userID:  userID,
-		apiBase: "https://pub.orcid.org/v2.1",
-	}, nil
+	return &Client{apiBase: u}, nil
 }
 
-func (r *Registry) UserID() string {
-	return r.userID
-}
+type ID string
 
-// FetchWorks downloads publications from a file, if it's fresh
-// enough, or via HTTP.
-func (r *Registry) FetchWorks(logger *log.Logger) ([]*Work, error) {
-	var works []*Work
-	var err error
-
-	logger.Println("downloading via HTTP")
-	works, err = fetchWorks(r, logger)
-
-	if err != nil {
-		return nil, err
+func IDFromURL(s string) (ID, error) {
+	if !strings.HasPrefix(s, "http") {
+		s = "https://" + s
 	}
+	uri, err := url.Parse(s)
+	if err != nil {
+		return ID(""), err
+	}
+	id := strings.Trim(uri.Path, "/")
+	return ID(id), nil
+}
 
-	// sort works descending
-	sort.Slice(works, func(i, j int) bool {
-		return works[i].Year > works[j].Year
-	})
+func (id ID) IsEmpty() bool {
+	return string(id) == ""
+}
 
-	// update convenience fields
-	updateExternalIDsURL(works)
-	updateContributorsLine(works)
-	updateMarkup(works)
-
-	return works, nil
+func (id ID) String() string {
+	return string(id)
 }
 
 // Activity is the ORCID <activities:works> XML element.
@@ -118,6 +108,29 @@ type Contributor struct {
 	Name string `xml:"credit-name"`
 }
 
+func FetchWorks(c *Client, id ID, logger *log.Logger) ([]*Work, error) {
+	var works []*Work
+	var err error
+
+	logger.Println("downloading via HTTP")
+	works, err = fetchWorks(c, id, logger)
+	if err != nil {
+		return nil, fmt.Errorf("fetchWorks failed: %v", err)
+	}
+
+	// sort works in year descending order
+	sort.Slice(works, func(i, j int) bool {
+		return works[i].Year > works[j].Year
+	})
+
+	// update convenience fields
+	updateExternalIDsURL(works)
+	updateContributorsLine(works)
+	updateMarkup(works)
+
+	return works, nil
+}
+
 // ReadWorks decodes works from an XML-file with works saved as
 // top-level elements.
 func ReadWorks(path string) ([]*Work, error) {
@@ -162,12 +175,16 @@ func fetchWork(uri string) (*Work, error) {
 	return &work, nil
 }
 
-func fetchWorks(r *Registry, logger *log.Logger) ([]*Work, error) {
+func fetchWorks(c *Client, id ID, logger *log.Logger) ([]*Work, error) {
 	// fetch summaries
-	workSummariesURI := fmt.Sprintf("%s/%s/works", r.apiBase, r.userID)
-	summaries, err := fetchWorkSummaries(workSummariesURI)
+	relURL, err := url.Parse(fmt.Sprintf("%s/works", id))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("url.Parse failed: %v", err)
+	}
+	reqURL := c.apiBase.ResolveReference(relURL)
+	summaries, err := fetchWorkSummaries(reqURL.String())
+	if err != nil {
+		return nil, fmt.Errorf("fetchWorkSummaries failed: %v", err)
 	}
 
 	// fetch details concurrently
@@ -185,9 +202,16 @@ func fetchWorks(r *Registry, logger *log.Logger) ([]*Work, error) {
 			wg.Add(1)
 			go func(w Work, works chan<- *Work) {
 				defer wg.Done()
-				workDetailsURI := r.apiBase + w.Path
-				logger.Println("fetching", workDetailsURI)
-				work, err := fetchWork(workDetailsURI)
+
+				relURL, err := url.Parse(w.Path)
+				if err != nil {
+					logger.Printf("url.Parse failed: %v", err)
+					return
+				}
+
+				reqURL := c.apiBase.ResolveReference(relURL)
+				logger.Println("fetching", reqURL.String())
+				work, err := fetchWork(reqURL.String())
 				if err != nil {
 					logger.Println(err)
 					return
@@ -216,13 +240,19 @@ func fetchWorks(r *Registry, logger *log.Logger) ([]*Work, error) {
 func fetchWorkSummaries(uri string) (*[]Work, error) {
 	resp, err := http.Get(uri)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("http.Get failed with code %d: %v", resp.StatusCode, err)
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode >= 300 {
+		respData, _ := ioutil.ReadAll(resp.Body)
+		return nil, fmt.Errorf("http.Get bad response, code %v, request URL: %v, response: %s",
+			resp.StatusCode, uri, respData)
+	}
+
 	works, err := decodeWorks(resp.Body)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("decodeWorks failed: %v", err)
 	}
 
 	return works, nil
