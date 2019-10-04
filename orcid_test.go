@@ -94,7 +94,7 @@ func TestFetchWorks(t *testing.T) {
 			t.Errorf("want %v, got %v", arg[1], idStr)
 		}
 
-		works, err := FetchWorks(client, id, logger, UpdateExternalIDsURL, UpdateContributorsLine, UpdateMarkup)
+		works, err := FetchWorks(client, id, logger)
 		if err != nil {
 			t.Error(err)
 		}
