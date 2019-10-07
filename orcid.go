@@ -105,6 +105,21 @@ type Work struct {
 	ContributorsLine string
 }
 
+// ExternalIDValue returns ExternalID.Value by ExternalID.Type. 
+func (w *Work) ExternalIDValue(s string) string {
+	if w == nil {
+		return ""
+	}
+
+	for _, v := range w.ExternalIDs {
+		if v.Type == s{
+			return v.Value
+		}
+	}
+
+	return ""
+}
+
 // Citation is an ORCID citation field.
 type Citation struct {
 	Type  string `xml:"citation-type"`
