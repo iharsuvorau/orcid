@@ -3,6 +3,8 @@ package orcid
 import (
 	"fmt"
 	"html/template"
+	"log"
+	"net/url"
 	"strings"
 )
 
@@ -22,6 +24,10 @@ func UpdateExternalIDsURL(works []*Work) {
 				} else {
 					continue
 				}
+				uri, err := url.PathUnescape(uri)
+				if err != nil {
+					log.Fatal(err)
+				}
 				works[i].DoiURI = template.URL(uri)
 			case "eid":
 				// TODO: is there a way to generate
@@ -30,6 +36,10 @@ func UpdateExternalIDsURL(works []*Work) {
 			default:
 				// if not implemented, skip the assignment
 				continue
+			}
+			uri, err := url.PathUnescape(uri)
+			if err != nil {
+				log.Fatal(err)
 			}
 			works[i].ExternalIDs[ii].URL = template.URL(uri)
 		}
