@@ -92,27 +92,27 @@ type Work struct {
 	Citation     *Citation     `xml:"citation"`
 	Type         string        `xml:"type"`
 	ExternalIDs  []struct {
-		Type  string       `xml:"external-id-type"` // doi = Digital Object Identifier, eid = Scopus
-		Value string       `xml:"external-id-value"`
-		URL   template.URL `xml:"external-id-url"`
+		Type  string        `xml:"external-id-type"` // doi = Digital Object Identifier, eid = Scopus
+		Value string        `xml:"external-id-value"`
+		URL   template.HTML `xml:"external-id-url"`
 	} `xml:"external-ids>external-id"`
 	URI          string         `xml:"url"`
 	Contributors []*Contributor `xml:"contributors>contributor"`
 
 	// Convenience fields. Do not belong to the ORCID schema. Used in templates
 
-	DoiURI           template.URL
+	DoiURI           template.HTML
 	ContributorsLine string
 }
 
-// ExternalIDValue returns ExternalID.Value by ExternalID.Type. 
+// ExternalIDValue returns ExternalID.Value by ExternalID.Type.
 func (w *Work) ExternalIDValue(s string) string {
 	if w == nil {
 		return ""
 	}
 
 	for _, v := range w.ExternalIDs {
-		if v.Type == s{
+		if v.Type == s {
 			return v.Value
 		}
 	}

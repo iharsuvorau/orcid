@@ -2,12 +2,26 @@ package orcid
 
 import (
 	"bytes"
+	"encoding/xml"
+	"fmt"
 	"html/template"
 	"log"
 	"os"
 	"reflect"
 	"testing"
 )
+
+func dumpWorks(works []*Work, fpath string) error {
+	f, err := os.Create(fpath)
+	if err != nil {
+		return fmt.Errorf("failed to create file %s: %v", fpath, err)
+	}
+	if err = xml.NewEncoder(f).Encode(works); err != nil {
+		return fmt.Errorf("failed to encode xml: %+v", err)
+	}
+	f.Close()
+	return nil
+}
 
 func TestIDFromURL(t *testing.T) {
 	tests := []struct {
@@ -70,10 +84,27 @@ func TestIDFromURL(t *testing.T) {
 	}
 }
 
+func Test_unescape(t *testing.T) {
+	args := [][]string{
+		{
+			"http://doi.org/10.1002/(SICI)1097-461X(1999)71:1&lt;101::AID-QUA10&gt;3.0.CO;2-Z",
+			"http://doi.org/10.1002/(SICI)1097-461X(1999)71:1<101::AID-QUA10>3.0.CO;2-Z",
+		},
+	}
+
+	for _, arg := range args {
+		out := unescape(arg[0])
+		if out != arg[1] {
+			t.Errorf("want %v, got %v", arg[1], out)
+		}
+	}
+}
+
 func TestFetchWorks(t *testing.T) {
 	args := [][]string{
 		[]string{"https://orcid.org/0000-0003-1928-5141", "0000-0003-1928-5141"},
 		[]string{"orcid.org/0000-0002-0183-1282", "0000-0002-0183-1282"},
+		[]string{"orcid.org/0000-0003-0466-2514", "0000-0003-0466-2514"},
 	}
 
 	const apiBase = "https://pub.orcid.org/v2.1"
@@ -100,6 +131,11 @@ func TestFetchWorks(t *testing.T) {
 		}
 		if len(works) == 0 {
 			t.Error("amount of works must be bigger than zero")
+		}
+
+		err = dumpWorks(works, "testdata/"+arg[1]+".xml")
+		if err != nil {
+			t.Error(err)
 		}
 	}
 }
