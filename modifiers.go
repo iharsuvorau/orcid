@@ -3,6 +3,8 @@ package orcid
 import (
 	"fmt"
 	"html/template"
+	"log"
+	"net/url"
 	"strings"
 )
 
@@ -29,7 +31,13 @@ func UpdateExternalIDsURL(works []*Work) {
 				} else {
 					continue
 				}
-				works[i].DoiURI = template.HTML(unescape(uri))
+				uri = unescape(uri)
+				u, err := url.Parse(uri)
+				if err != nil {
+					log.Fatal(err)
+				}
+				uri = u.String()
+				works[i].DoiURI = template.HTML(uri)
 			case "eid":
 				// TODO: is there a way to generate
 				// freely fetchable record from
@@ -38,7 +46,13 @@ func UpdateExternalIDsURL(works []*Work) {
 				// if not implemented, skip the assignment
 				continue
 			}
-			works[i].ExternalIDs[ii].URL = template.HTML(unescape(uri))
+			uri = unescape(uri)
+			u, err := url.Parse(uri)
+			if err != nil {
+				log.Fatal(err)
+			}
+			uri = u.String()
+			works[i].ExternalIDs[ii].URL = template.HTML(uri)
 		}
 
 	}
